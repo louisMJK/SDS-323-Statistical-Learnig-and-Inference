@@ -1,2 +1,2 @@
 # SDS 323 Statistical Learnig and Inference
-Coursework
+Coursework of SDS 323
