@@ -1,2 +1,2 @@
-# SDS323_Statistical-Learnig
+# SDS323_Statistical Learnig
 Coursework
