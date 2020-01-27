@@ -1,2 +1,2 @@
-# SDS323_Statistical Learnig
+# SDS 323 Statistical Learnig and Inference
 Coursework
