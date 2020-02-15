@@ -1,0 +1,386 @@
+---
+title: "SDS_323 Exercise#1"
+author: Yunlei Lu
+date: Feb.14, 2020
+output: md_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=TRUE)
+```
+```{r library, message=FALSE, warning=FALSE, include=FALSE}
+library(mosaic)
+library(tidyverse)
+library(ggmap)
+library(ggthemes)
+library(dplyr)
+library(ggrepel)
+library(maps)
+library(gridExtra)
+library(knitr)
+```
+
+## 1.Data visualization: Flights at ABIA
+     
+### Data
+Consider the data in [ABIA.csv](../data/ABIA.csv), which contains information on every commercial flight in 2008 that either departed from or landed at Austin-Bergstrom Interational Airport. The data in [airports.txt](../data/airports.txt) contains the IATA code and coordinates of every airport.
+
+```{r import data1, include=FALSE}
+ABIA = read.csv('C:/Users/thinkpad/Desktop/UT_Course/SDS 323/Exercise_1/data/ABIA.csv')
+airports = read.delim('C:/Users/thinkpad/Desktop/UT_Course/SDS 323/Exercise_1/data/airports.txt', sep=",", header=FALSE)
+ds_flight = ABIA
+ds_airport = airports
+summary(ds_flight)
+head(ds_airport)
+```
+```{r Dept/Origin AUS}
+ds_origin = subset(ds_flight, Origin=="AUS", select=c(Dest,Cancelled))
+ds_origin = subset(ds_origin, Cancelled==0, select=Dest)
+ds_dest = subset(ds_flight, Dest=="AUS", select=c(Origin,Cancelled))
+ds_dest = subset(ds_dest, Cancelled==0, select=Origin)
+```
+
+Create a dataset with airports information.
+```{r, echo=FALSE}
+ds_airport = subset(ds_airport, V4=="United States", select=c(V3,V5,V7,V8)) 
+colnames(ds_airport) = c("City","IATAcode","lat","long")
+head(ds_airport)
+```
+
+
+#### The destination city frequency of flights that departed from Ausitn 
+```{r freq Origin, echo=FALSE}
+# This part may take some time to run:)
+flights_df = data.frame(ds_airport)
+flights_df$freq = 0
+df_origin = data.frame(ds_origin)
+for(i in 1:nrow(df_origin))
+{ j=1
+  while(df_origin[i,1] != flights_df$IATAcode[j])
+  {j = j+1
+    if(j>nrow(flights_df))
+    {break
+    }
+  }
+  if(j<=nrow(flights_df))
+  {flights_df$freq[j] = flights_df$freq[j]+1
+  }
+}
+flights_df = subset(flights_df, freq!=0)
+head(flights_df)
+```
+
+
+#### The origin city frequency of flights that landed at Ausitn
+```{r freq Dept, echo=FALSE}
+flights_df2 = data.frame(ds_airport)
+flights_df2$freq = 0
+df_dest = data.frame(ds_dest)
+for(i in 1:nrow(df_dest))
+{ j=1
+  while(df_dest[i,1] != flights_df2$IATAcode[j])
+  {j = j+1
+  if(j>nrow(flights_df2))
+    {break
+    }
+  }
+  if(j<=nrow(flights_df2))
+  {flights_df2$freq[j] = flights_df2$freq[j]+1
+  }
+}
+flights_df2 = subset(flights_df2, freq!=0)
+head(flights_df2)
+```
+
+
+### Data Visualization
+#### Histogram
+```{r histogram1, echo=FALSE}
+flights_df = flights_df %>% arrange(-freq)
+flights_df2 = flights_df2 %>% arrange(-freq)
+
+g1 <- flights_df %>% ggplot(aes(x=reorder(City,freq), y=freq)) +
+  geom_bar(aes(fill=flights_df$freq), stat='identity') +
+  coord_flip() +
+  scale_fill_gradientn(name='',colors=colorRampPalette(c("gray","#46ACC8"))(10)) +
+  theme(legend.position='none', plot.title=element_text(size=10)) + 
+  ggtitle('Number of flights,\nDeparted from Ausitn, 2008') +
+  ylab("Number of flights") + xlab("Destination") +
+  theme(axis.text=element_text(size=5, face="bold"),
+        axis.title=element_text(size=9))
+# g1
+g2 = ggplot(flights_df2, aes(x=reorder(City, freq), y=freq)) +
+  geom_bar(aes(fill=freq), stat='identity') +
+  coord_flip() +
+  scale_fill_gradientn(name='',colors=colorRampPalette(c("gray","#DD8D29"))(10)) +
+  theme(legend.position='none', plot.title=element_text(size=10)) + 
+  ggtitle('Number of flights,\nLanded at Ausitn, 2008') +
+  ylab("Number of flights") + xlab("Origin") +
+  theme(axis.text=element_text(size=5, face="bold"),
+        axis.title=element_text(size=9))
+# g2
+
+grid.arrange(g1, g2, ncol=2)
+```
+
+#### Flights information on US map
+```{r US map, message=FALSE, warning=FALSE, include=FALSE}
+# Create a US Map
+states_map = map_data("state")
+USMap <- ggplot() + 
+  geom_map(data=states_map, map=states_map, 
+           aes(x=long, y=lat, map_id=region, group=group), 
+           fill="white", color="gray", size=0.1) +
+  ylim(25,50) + xlim(-125,-68) +
+  xlab("longitude") + ylab("latitude")
+USMap
+```
+
+```{r map, echo=FALSE, message=FALSE, warning=FALSE}
+USMap + 
+  geom_point(data=flights_df, aes(x=long,y=lat,size=freq/5000,color="Departure"),alpha=0.6) + 
+  geom_point(data=flights_df2,aes(x=long,y=lat,size=freq/5000,color="Landing"),alpha=0.4) + 
+  geom_label_repel(data=flights_df[1:11,1:ncol(flights_df)], aes(x=long,y=lat,label=flights_df$City[1:11]),
+                   size=2.5, color = 'black',
+                   box.padding = unit(0.1, "lines"),
+                   point.padding = unit(0.3, "lines"),
+                   segment.color = 'black', alpha=1, force=10) +
+  scale_colour_manual(name="",values=c(Departure="red",Landing="#00A5FF")) + 
+  scale_size(range=c(0,8)) + 
+  theme(legend.title=element_blank()) + 
+  coord_map("albers", lat0=39, lat1=50) + 
+  ggtitle('Number of flights in 2008, Austin\nDeparture or Landing')
+```
+
+
+
+## 2.Regression
+
+### Data
+The data in [creatinine.csv](../data/creatinine.csv) contains the age and the creatclear of patients.
+
+- age: patient's age in years.  
+- creatclear: patient's creatine clearance rate in mL/minute, a measure of kidney health (higher is better).
+
+```{r import data2, include=FALSE}
+data1 = read.csv('C:/Users/thinkpad/Desktop/UT_Course/SDS 323/Exercise_1/data/creatinine.csv')
+head(data1)
+```
+
+##### Scatter plot of creatclear and age
+```{r plot2, echo=FALSE}
+ggplot(data=data1, aes(x=age, y=creatclear)) +
+  geom_point() +
+  xlim(10,100) + ylim(80,160)
+```
+
+### Linear regression
+
+Fit a linear model for creatclear versus age.
+The coefficients are:
+```{r lm1, echo=TRUE}
+lm1 = lm(creatclear~age, data=data1)
+coef(lm1)
+```
+
+#### 1.The average creatinine clearance rate at age 55 is 113.7 mL/minute.
+```{r, echo=TRUE}
+new_data = data.frame(age=55)
+predict(lm1, new_data)
+```
+
+#### 2.The creatinine clearance rate of change with age is -0.62 mL/minute per year.
+```{r, echo=FALSE}
+rate = coef(lm1)[2]
+rate
+```
+
+#### 3.Whose creatinine clearance rate is healthier for their age: 
+a 40-year-old with a rate of 135, or a 60-year-old with a rate of 112?
+```{r, echo=TRUE}
+predict1 = predict(lm1, data.frame(age=40))
+predict2 = predict(lm1, data.frame(age=60))
+resid_1 = 135-predict1
+resid_2 = 112-predict2
+resid_1
+resid_2
+```
+The difference between the first person and his expected creatinine clearance rate: 11.98 mL/minute.
+The difference between the second person and his expected creatinine clearance rate: 1.38 mL/minute.
+To conclude: the first person's creatinine clearance rate is healthier for their age.
+
+
+
+
+
+
+
+## 3.Green buildings
+
+### Data
+The file [greenbuildings.csv](../data/greenbuildings.csv) contains data on 7,894 commercial rental properties from across the United States. Of these, 685 properties have been awarded either LEED or EnergyStar certification as a green building.
+
+```{r import data3, include=FALSE}
+ds_building = read.csv('C:/Users/thinkpad/Desktop/UT_Course/SDS 323/Exercise_1/data/greenbuildings.csv')
+head(ds_building)
+summary(ds_building)
+```
+
+Considering the developer plans to construct a new 15-story mixed-use building on East Cesar Chavez, Austin, we need to filter the data fisrt.
+From the dataset, we include buildings which are between 10 and 30 stories and employment growth rate that is below 60%, since the new building is in downtown. Buildings with leasing rate below 20% are excluded. Austin has a higher number of cooling degree days than heating degree days according to the "2018 LOCAL CLIMATOLOGICAL DATA ANNUAL SUMMARY WITH COMPARATIVE DATA" report(https://cdn1.austinchamber.com/archive/files/ed/LCDAustinKAUS2018.pdf?mtime=20190718155709), so we exclude data which has a higher heating degree days.
+For buildings that net equals to 1, the total rent is recalculated with Electricity costs and Gas costs.
+
+```{r, echo=FALSE}
+# filter dataset: 10<=stories<=30,amenities==1
+ds_building = subset(ds_building, stories>=10&stories<=30&amenities==1&empl_gr<60&leasing_rate>20&(cd_total_07>hd_total07))
+ds_green = subset(ds_building, green_rating==1)
+ds_building = ds_building %>% filter(cluster %in% ds_green$cluster) 
+
+# total rent
+ds_building$Rent_total = 0
+for(i in 1:nrow(ds_building))
+{
+  if(ds_building$net[i]==0)
+  {
+    ds_building$Rent_total[i] = ds_building$Rent[i]
+  }
+  else
+  {
+    ds_building$Rent_total[i] = ds_building$Rent[i]+
+      ds_building$Electricity_Costs[i]+ds_building$Gas_Costs[i]
+  }
+}
+ds_building = subset(ds_building, select=-c(Rent,net,amenities,Gas_Costs,Electricity_Costs))
+
+head(ds_building)
+ds_green = subset(ds_building, green_rating==1)
+ds_non = subset(ds_building, green_rating==0)
+```
+
+### Estimation
+Thus, we can give a rough estimate that how long are we able to make profits. 
+The mean market rent of the buildings in cluster was \$20.58 per square foot per year, while the mean market rent in the green buildings was \$21.39 per square foot per year: about \$0.81 more per square foot. Because our building would be 250,000 square feet, this would translate into an additional \$250000 x 0.81 = $202500 of extra revenue per year if we build the green building.
+Our expected baseline construction costs are \$100 million, with a 5% expected premium for green certification. Thus we should expect to spend an extra \$5 million on the green building.Based on the extra revenue we would make, we would recuperate these costs in $5000000/202500 = 24.7 years, which is much larger than the previous 8 years estimation.
+
+```{r, echo=FALSE}
+# rough estimate of years to profit
+rent_green = mean(ds_green$Rent_total)
+cluster_mean_green = mean(ds_green$cluster_rent)
+delta = rent_green - cluster_mean_green
+years = 5000000/(250000*delta)
+years
+```
+
+
+
+### The relationship between Rent and age
+We can reveal that the rent decreases significantly as the age of the building increases for green buildings. However, the effect is not that significant for non-green buildings.
+The results are shown in the 2 figures below.
+
+#### Green Building
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# plot: Rent~age  (green)
+# renovated?
+ggplot(data=ds_green, aes(x=age, y=Rent_total))+
+  geom_point() +
+  xlim(0, 40) + ylim(0,40) +
+  xlab("Age of Building") + ylab("Rent\n($ per square feet per year)") +
+  ggtitle("Green Building") +
+  geom_smooth(span=5)
+```
+
+#### Non-green Building
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# plot: Rent~age  (non-green)
+ggplot(data=ds_non, aes(x=age, y=Rent_total))+
+  geom_point() +
+  xlim(0, 40) + ylim(0,40) +
+  xlab("Age of Building") + ylab("Rent\n($ per square feet per year)") +
+  ggtitle("Non-Green Building") +
+  geom_smooth(span=5)
+```
+
+
+
+
+### Conclusion
+This indicates that although we can cover the extra construction  costs in approximately 25 years on average, the profit will decrease in the long run. While non-green building's average rent is higher on the long run, the profit of a green building is less than non-green building if the developer plans to build a 15-story building on East Cesar Chavez, Austin.  
+
+
+## 4.Milk prices
+
+### Data
+The data in [milk.csv](../data/milk.csv) contains a random sample of daily sales figures for a small neighborhood grocery store of cartons of milk.
+
+-price: the price at which the milk was sold that day;
+-sales: how many units were sold that day.
+
+### Goal
+Find the optimal milk price that maximize the profit. Suppose that the per-unit cost is $1
+
+```{r import data4, include=FALSE}
+ds_milk = read.csv('C:/Users/thinkpad/Desktop/UT_Course/SDS 323/Exercise_1/data/milk.csv')
+head(ds_milk)
+```
+
+##### Scatter plot of sales versus price
+```{r, echo=FALSE}
+ggplot(data=ds_milk, aes(x=price, y=sales)) +
+  geom_point() +
+  xlim(0,6) + ylim(0,120)
+```
+
+### Fit the demand curve
+Q = K*P^(E).  P is the price and Q is sales. K and E are coefficients.
+```{r}
+# fitting curve: Q=K*P^(E)
+plot(log(sales)~log(price), data=ds_milk)
+lm1 = lm(log(sales)~log(price), data=ds_milk)
+abline(lm1, col="red")
+E = coef(lm1)[2]
+K = exp(coef(lm1)[1])
+```
+The coefficients of our linear model are:
+```{r}
+coef(lm1)
+```
+Thus, K and E are:
+```{r, echo=FALSE}
+K
+E
+```
+K = 112.236,  E = -1.619
+
+#### The demand curve
+```{r, echo=FALSE}
+# plot on original
+plot(sales~price, data=ds_milk)
+curve(K*x^(E), add=TRUE, col="red")
+```
+
+#### Profit function
+profit = (P-c)\*K\*P^(E)
+```{r, echo=FALSE}
+# plot profit function 
+# Q=K*P^(E)
+# profit = P*Q - c*Q
+# profit = (P-c)*K*P^(E)
+fun_profit <- function(P) (P-1)*K*P^(E)
+p <- ggplot(data=data.frame(x=0), mapping=aes(x=x))
+p + 
+  stat_function(fun = fun_profit) +
+  xlim(0,10) + ylim(0,40)+
+  labs(x="Price", y="Profit")
+```
+
+### The optimal price
+Find the optimal price that maximzie profit.
+```{r, include=TRUE}
+opt = optimize(f=fun_profit, interval=c(0,10), maximum=TRUE)
+P_opt = opt[1]
+max_profit = opt[2] 
+P_opt
+max_profit
+```
+Conslusion: Under our regression model, the optimal milk price is \$2.62 with the maximum profit \$38.25 per day.
+
