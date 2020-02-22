@@ -78,11 +78,11 @@ Create a dataset with airports information.
     ## 10 New York               1323
     ## # ... with 40 more rows
 
-![](Exercise1_Yunlei_Lu_files/figure-markdown_strict/histogram1-1.png)![](Exercise1_Yunlei_Lu_files/figure-markdown_strict/histogram1-2.png)![](Exercise1_Yunlei_Lu_files/figure-markdown_strict/histogram1-3.png)
+![](Exercise1_files/figure-markdown_strict/histogram1-3.png)
 
 #### Flights information on US map
 
-![](Exercise1_Yunlei_Lu_files/figure-markdown_strict/map-1.png)
+![](Exercise1_files/figure-markdown_strict/map-1.png)
 
 2.Regression
 ------------
@@ -98,7 +98,7 @@ and the creatclear of patients.
 
 ##### Scatter plot of creatclear and age
 
-![](Exercise1_Yunlei_Lu_files/figure-markdown_strict/plot2-1.png)
+![](Exercise1_files/figure-markdown_strict/plot2-1.png)
 
 ### Linear regression
 
@@ -107,7 +107,7 @@ Fit a linear model for creatclear versus age. The coefficients are:
     lm1 = lm(creatclear~age, data=data1)
     coef(lm1)
 
-    ## (Intercept)         age 
+    ## (Intercept)         age
     ## 147.8129158  -0.6198159
 
 #### 1.The average creatinine clearance rate at age 55 is 113.7 mL/minute.
@@ -115,12 +115,12 @@ Fit a linear model for creatclear versus age. The coefficients are:
     new_data = data.frame(age=55)
     predict(lm1, new_data)
 
-    ##       1 
+    ##       1
     ## 113.723
 
 #### 2.The creatinine clearance rate of change with age is -0.62 mL/minute per year.
 
-    ##        age 
+    ##        age
     ## -0.6198159
 
 #### 3.Whose creatinine clearance rate is healthier for their age:
@@ -133,12 +133,12 @@ a 40-year-old with a rate of 135, or a 60-year-old with a rate of 112?
     resid_2 = 112-predict2
     resid_1
 
-    ##        1 
+    ##        1
     ## 11.97972
 
     resid_2
 
-    ##        1 
+    ##        1
     ## 1.376035
 
 The difference between the first person and his expected creatinine
@@ -218,11 +218,11 @@ figures below.
 
 #### Green Building
 
-![](Exercise1_Yunlei_Lu_files/figure-markdown_strict/unnamed-chunk-7-1.png)
+![](Exercise1_files/figure-markdown_strict/unnamed-chunk-7-1.png)
 
 #### Non-green Building
 
-![](Exercise1_Yunlei_Lu_files/figure-markdown_strict/unnamed-chunk-8-1.png)
+![](Exercise1_files/figure-markdown_strict/unnamed-chunk-8-1.png)
 
 ### Conclusion
 
@@ -252,7 +252,7 @@ per-unit cost is $1
 
 ##### Scatter plot of sales versus price
 
-![](Exercise1_Yunlei_Lu_files/figure-markdown_strict/unnamed-chunk-9-1.png)
+![](Exercise1_files/figure-markdown_strict/unnamed-chunk-9-1.png)
 
 ### Fit the demand curve
 
@@ -263,7 +263,7 @@ Q = K\*P^(E). P is the price and Q is sales. K and E are coefficients.
     lm1 = lm(log(sales)~log(price), data=ds_milk)
     abline(lm1, col="red")
 
-![](Exercise1_Yunlei_Lu_files/figure-markdown_strict/unnamed-chunk-10-1.png)
+![](Exercise1_files/figure-markdown_strict/unnamed-chunk-10-1.png)
 
     E = coef(lm1)[2]
     K = exp(coef(lm1)[1])
@@ -272,27 +272,27 @@ The coefficients of our linear model are:
 
     coef(lm1)
 
-    ## (Intercept)  log(price) 
+    ## (Intercept)  log(price)
     ##    4.720604   -1.618578
 
 Thus, K and E are:
 
-    ## (Intercept) 
+    ## (Intercept)
     ##     112.236
 
-    ## log(price) 
+    ## log(price)
     ##  -1.618578
 
 K = 112.236, E = -1.619
 
 #### The demand curve
 
-![](Exercise1_Yunlei_Lu_files/figure-markdown_strict/unnamed-chunk-13-1.png)
+![](Exercise1_files/figure-markdown_strict/unnamed-chunk-13-1.png)
 
 #### Profit function
 
 profit = (P-c)\*K\*P^(E)
-![](Exercise1_Yunlei_Lu_files/figure-markdown_strict/unnamed-chunk-14-1.png)
+![](Exercise1_files/figure-markdown_strict/unnamed-chunk-14-1.png)
 
 ### The optimal price
 
@@ -300,7 +300,7 @@ Find the optimal price that maximzie profit.
 
     opt = optimize(f=fun_profit, interval=c(0,10), maximum=TRUE)
     P_opt = opt[1]
-    max_profit = opt[2] 
+    max_profit = opt[2]
     P_opt
 
     ## $maximum
@@ -309,7 +309,7 @@ Find the optimal price that maximzie profit.
     max_profit
 
     ## $objective
-    ## (Intercept) 
+    ## (Intercept)
     ##    38.24675
 
 Conslusion: Under our regression model, the optimal milk price is $2.62
